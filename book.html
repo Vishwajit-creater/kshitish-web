@@ -1,0 +1,483 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Appointment – Urban Hairplaza</title>
+  <meta name="description" content="Book your barbershop appointment online. In-shop or home visit, choose your service, barber, date and time.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <style>
+    .book-page { padding-top: calc(var(--nav-h) + 40px); padding-bottom: 80px; min-height: 100vh; }
+    .book-header { text-align: center; margin-bottom: 48px; }
+    .progress-track { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 48px; }
+    .progress-step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .step-dot { width: 36px; height: 36px; border-radius: 50%; background: var(--dark2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; transition: var(--transition); }
+    .step-dot.active { background: var(--gold); border-color: var(--gold); color: var(--black); }
+    .step-dot.done { background: transparent; border-color: var(--gold); color: var(--gold); }
+    .step-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
+    .step-label.active { color: var(--gold); }
+    .step-connector { width: 60px; height: 2px; background: var(--border); margin-bottom: 20px; transition: var(--transition); }
+    .step-connector.done { background: var(--gold); }
+    .wizard-panel { display: none; animation: fadeIn 0.3s ease; }
+    .wizard-panel.active { display: block; }
+    .step-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; max-width: 800px; margin: 0 auto; }
+    .step-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .step-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+    .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .barber-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .barber-option { background: var(--card2); border: 2px solid var(--border); border-radius: var(--radius); padding: 24px 16px; text-align: center; cursor: pointer; transition: var(--transition); }
+    .barber-option:hover, .barber-option.selected { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+    .barber-option-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg,var(--gold),var(--gold-dark)); color: var(--black); font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .barber-option-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .barber-option-role { font-size: 12px; color: var(--text-muted); }
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 16px; }
+    .policy-notice { background: rgba(201,168,76,0.06); border: 1px solid var(--border-gold); border-radius: var(--radius-sm); padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: var(--text-muted); }
+    .policy-notice strong { color: var(--gold); }
+    .payment-group { background: var(--dark2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; margin-top: 20px; }
+    .radio-row { display: flex; gap: 16px; margin: 12px 0; }
+    .radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 15px; }
+    .btn-row { display: flex; gap: 12px; margin-top: 32px; justify-content: space-between; }
+    #booking-success { display: none; }
+    .success-icon { font-size: 64px; text-align: center; margin-bottom: 16px; }
+    @media (max-width: 600px) { .choice-grid { grid-template-columns: 1fr; } .barber-options { grid-template-columns: 1fr 1fr; } .step-connector { width: 30px; } }
+  </style>
+</head>
+<body>
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></a>
+      <div class="nav-links"><a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a></div>
+      <div class="nav-actions" style="display:flex;gap:12px;"><a href="login.html" class="btn-ghost btn-sm" id="nav-login">Login</a></div>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="book-page">
+    <div class="container">
+      <div class="book-header">
+        <div class="section-label" style="justify-content:center;">Online Booking</div>
+        <h1 style="font-size:clamp(28px,4vw,42px);">Book Your Appointment</h1>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-track" id="progress-track">
+        <div class="progress-step"><div class="step-dot active" id="dot-1">1</div><div class="step-label active" id="lbl-1">Type</div></div>
+        <div class="step-connector" id="conn-1"></div>
+        <div class="progress-step"><div class="step-dot" id="dot-2">2</div><div class="step-label" id="lbl-2">Service</div></div>
+        <div class="step-connector" id="conn-2"></div>
+        <div class="progress-step"><div class="step-dot" id="dot-3">3</div><div class="step-label" id="lbl-3">Barber</div></div>
+        <div class="step-connector" id="conn-3"></div>
+        <div class="progress-step"><div class="step-dot" id="dot-4">4</div><div class="step-label" id="lbl-4">Date & Time</div></div>
+        <div class="step-connector" id="conn-4"></div>
+        <div class="progress-step"><div class="step-dot" id="dot-5">5</div><div class="step-label" id="lbl-5">Confirm</div></div>
+      </div>
+
+      <!-- Step 1 -->
+      <div class="wizard-panel active" id="step-1">
+        <div class="step-card">
+          <div class="step-title">Choose Service Type</div>
+          <div class="step-desc">Where would you like your grooming service?</div>
+          <div class="choice-grid">
+            <div class="choice-card" id="choice-inshop" onclick="selectType('inshop')">
+              <div class="choice-icon">🏢</div>
+              <div class="choice-title">In-Shop Visit</div>
+              <div class="choice-desc">Visit our premium barbershop in Simraha, Araria</div>
+            </div>
+            <div class="choice-card" id="choice-home" onclick="selectType('home')">
+              <div class="choice-icon">🏠</div>
+              <div class="choice-title">Home Visit</div>
+              <div class="choice-desc">Our barber comes to your doorstep</div>
+            </div>
+          </div>
+          <div class="btn-row" style="justify-content:flex-end;">
+            <button class="btn-primary" onclick="goStep(2)" id="next-1" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="wizard-panel" id="step-2">
+        <div class="step-card">
+          <div class="step-title">Select a Service</div>
+          <div class="step-desc">Choose a service based on your preference.</div>
+          <div id="services-list">
+            <div class="spinner" style="margin:40px auto;"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-ghost" onclick="goStep(1)">← Back</button>
+            <button class="btn-primary" onclick="goStep(3)" id="next-2" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="wizard-panel" id="step-3">
+        <div class="step-card">
+          <div class="step-title">Choose Your Barber</div>
+          <div class="step-desc">Pick your preferred barber or let us assign the best available.</div>
+          <div class="barber-options">
+            <div class="barber-option" id="barber-raj" onclick="selectBarber('Raj Kumar', this)">
+              <div class="barber-option-avatar">R</div>
+              <div class="barber-option-name">Raj Kumar</div>
+              <div class="barber-option-role">Master Barber</div>
+            </div>
+            <div class="barber-option" id="barber-sameer" onclick="selectBarber('Sameer Khan', this)">
+              <div class="barber-option-avatar">S</div>
+              <div class="barber-option-name">Sameer Khan</div>
+              <div class="barber-option-role">Senior Barber</div>
+            </div>
+            <div class="barber-option" id="barber-amit" onclick="selectBarber('Amit Singh', this)">
+              <div class="barber-option-avatar">A</div>
+              <div class="barber-option-name">Amit Singh</div>
+              <div class="barber-option-role">Barber</div>
+            </div>
+          </div>
+          <button class="btn-ghost" style="width:100%;text-align:center;margin-top:16px;display:block;" onclick="selectBarber('Best Available', null)">No Preference – Assign Best Available ✓</button>
+          <div class="btn-row">
+            <button class="btn-ghost" onclick="goStep(2)">← Back</button>
+            <button class="btn-primary" onclick="goStep(4)" id="next-3" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="wizard-panel" id="step-4">
+        <div class="step-card">
+          <div class="step-title">Pick Date & Time</div>
+          <div class="step-desc">Select your preferred appointment date and time slot.</div>
+          <div class="policy-notice">
+            <strong>📋 Booking Policy:</strong> Same-day bookings are free to book. For future dates, an advance payment is required.
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="date-input">Appointment Date</label>
+            <input type="date" id="date-input" class="form-input" style="max-width:300px;">
+          </div>
+          <div id="slots-section" style="display:none;">
+            <label class="form-label">Available Time Slots</label>
+            <div class="slots-grid" id="slots-grid"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-ghost" onclick="goStep(3)">← Back</button>
+            <button class="btn-primary" onclick="goStep(5)" id="next-4" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="wizard-panel" id="step-5">
+        <div class="step-card">
+          <div class="step-title">Confirm & Book</div>
+          <div class="step-desc">Review your appointment details and provide your contact info.</div>
+
+          <!-- Summary -->
+          <div class="booking-summary" style="margin-bottom:28px;">
+            <table>
+              <tr><td>Type</td><td id="sum-type">—</td></tr>
+              <tr><td>Service</td><td id="sum-service">—</td></tr>
+              <tr><td>Barber</td><td id="sum-barber">—</td></tr>
+              <tr><td>Date</td><td id="sum-date">—</td></tr>
+              <tr><td>Time</td><td id="sum-time">—</td></tr>
+              <tr><td>Duration</td><td id="sum-duration">—</td></tr>
+              <tr><td>Price</td><td id="sum-price">—</td></tr>
+            </table>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="form-group">
+            <label class="form-label" for="cust-name">Your Name *</label>
+            <input type="text" id="cust-name" class="form-input" placeholder="Full name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cust-phone">Phone Number *</label>
+            <input type="tel" id="cust-phone" class="form-input" placeholder="10-digit mobile number" maxlength="10" required>
+          </div>
+          <div class="form-group" id="address-group" style="display:none;">
+            <label class="form-label" for="cust-address">Delivery Address *</label>
+            <textarea id="cust-address" class="form-textarea" placeholder="Enter your full address for home visit" style="min-height:80px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cust-notes">Special Notes (Optional)</label>
+            <textarea id="cust-notes" class="form-textarea" placeholder="Any specific requests or instructions?" style="min-height:80px;"></textarea>
+          </div>
+
+          <!-- Payment -->
+          <div class="payment-group">
+            <div class="form-label" style="margin-bottom:12px;">💳 Advance Payment</div>
+            <div class="radio-row" id="payment-radios">
+              <label class="radio-label"><input type="radio" name="advance" value="no" id="pay-no" checked> No, pay at the shop</label>
+              <label class="radio-label"><input type="radio" name="advance" value="yes" id="pay-yes"> Yes, pay advance online</label>
+            </div>
+            <div id="advance-amount-wrap" style="display:none;margin-top:12px;">
+              <label class="form-label" for="advance-amount">Advance Amount (₹50 – ₹<span id="max-advance">500</span>)</label>
+              <input type="number" id="advance-amount" class="form-input" placeholder="Enter advance amount" min="50" style="max-width:200px;">
+            </div>
+            <div id="future-notice" style="display:none;padding:10px 14px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);border-radius:var(--radius-sm);color:#60a5fa;font-size:13px;margin-top:8px;">
+              ℹ️ Future date booking requires advance payment.
+            </div>
+          </div>
+
+          <div id="book-error" style="display:none;margin-top:16px;padding:12px 16px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:var(--radius-sm);color:#f87171;font-size:14px;"></div>
+          <div class="btn-row">
+            <button class="btn-ghost" onclick="goStep(4)">← Back</button>
+            <button class="btn-primary" id="book-now-btn" onclick="submitBooking()">Book Now ✂️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success -->
+      <div id="booking-success" style="max-width:560px;margin:0 auto;text-align:center;">
+        <div style="background:var(--card);border:1px solid rgba(74,222,128,0.3);border-radius:16px;padding:48px 40px;">
+          <div class="success-icon">🎉</div>
+          <h2 style="margin-bottom:8px;color:#4ade80;">Booking Confirmed!</h2>
+          <p style="color:var(--text-muted);margin-bottom:24px;">Your appointment has been received. We'll send a confirmation SMS shortly.</p>
+          <div class="booking-summary" style="text-align:left;margin-bottom:24px;">
+            <table>
+              <tr><td>Booking ID</td><td id="success-id" style="color:var(--gold);font-weight:700;"></td></tr>
+              <tr><td>Service</td><td id="success-service"></td></tr>
+              <tr><td>Date & Time</td><td id="success-datetime"></td></tr>
+              <tr><td>Contact</td><td>📱 +91 6202 692 426</td></tr>
+            </table>
+          </div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="index.html" class="btn-outline">← Back to Home</a>
+            <a href="book.html" class="btn-primary">Book Another ✂️</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="main.js"></script>
+  <script>
+    const ALL_SLOTS = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM'];
+    let booking = { type: null, service: null, serviceName: '', barber: 'Best Available', date: '', time: '', price: 0, duration: 0 };
+    let allServices = [];
+    let isFutureDate = false;
+
+    // Auto-detect URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type')) selectType(params.get('type'));
+    if (params.get('barber')) { booking.barber = params.get('barber'); }
+
+    // Auto-fill from session
+    fetch('/api/auth/me').then(r => r.json()).then(d => {
+      if (d.user) {
+        document.getElementById('cust-name').value = d.user.name;
+        document.getElementById('cust-phone').value = d.user.phone;
+        document.getElementById('nav-login').textContent = d.user.name.split(' ')[0];
+        document.getElementById('nav-login').href = 'profile.html';
+      }
+    }).catch(()=>{});
+
+    // Handle Cashfree return
+    if (params.get('payment') === 'success' && params.get('order_id')) {
+      verifyAndShowSuccess(params.get('order_id'), params.get('booking_id'));
+    }
+
+    function selectType(type) {
+      booking.type = type;
+      document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById('choice-' + type).classList.add('selected');
+      document.getElementById('next-1').disabled = false;
+      document.getElementById('address-group').style.display = type === 'home' ? 'block' : 'none';
+    }
+
+    function selectBarber(name, el) {
+      booking.barber = name;
+      document.querySelectorAll('.barber-option').forEach(b => b.classList.remove('selected'));
+      if (el) el.classList.add('selected');
+      document.getElementById('next-3').disabled = false;
+    }
+
+    async function loadServices() {
+      try {
+        const res = await fetch('/api/services');
+        allServices = await res.json();
+        renderServices();
+      } catch (e) { document.getElementById('services-list').innerHTML = '<p style="color:#f87171;">Failed to load services.</p>'; }
+    }
+
+    function renderServices() {
+      const filtered = allServices.filter(s => s.type === booking.type);
+      const html = filtered.map(s => `
+        <div class="service-option" onclick="selectService('${s.id}', '${s.name.replace(/'/g,"\\'")}', ${s.price}, ${s.duration}, this)">
+          <div class="service-option-icon">${s.icon || '✂️'}</div>
+          <div class="service-option-info">
+            <div class="service-option-name">${s.name}</div>
+            <div class="service-option-meta">⏱ ${s.duration} min</div>
+          </div>
+          <div class="service-option-price">₹${s.price}</div>
+          <div class="service-option-check">✓</div>
+        </div>`).join('');
+      document.getElementById('services-list').innerHTML = html || '<p style="color:var(--text-muted);">No services found for this type.</p>';
+    }
+
+    function selectService(id, name, price, duration, el) {
+      booking.service = id;
+      booking.serviceName = name;
+      booking.price = price;
+      booking.duration = duration;
+      document.querySelectorAll('.service-option').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('next-2').disabled = false;
+      document.getElementById('max-advance').textContent = price;
+      document.getElementById('advance-amount').max = price;
+    }
+
+    const dateInput = document.getElementById('date-input');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    dateInput.addEventListener('change', async () => {
+      const selected = dateInput.value;
+      if (!selected) return;
+      if (selected < today) { alert('Please select a future date.'); dateInput.value = ''; return; }
+      booking.date = selected;
+      isFutureDate = selected > today;
+      updatePaymentUI();
+      const slotsSection = document.getElementById('slots-section');
+      const slotsGrid = document.getElementById('slots-grid');
+      slotsSection.style.display = 'block';
+      slotsGrid.innerHTML = '<div class="spinner" style="margin:20px auto;"></div>';
+      document.getElementById('next-4').disabled = true;
+      booking.time = '';
+      try {
+        const res = await fetch('/api/available-slots?date=' + selected);
+        const { bookedTimes } = await res.json();
+        slotsGrid.innerHTML = ALL_SLOTS.map(t => `
+          <div class="time-slot ${bookedTimes.includes(t) ? 'unavailable' : ''}" onclick="selectSlot('${t}', this)">${t}</div>
+        `).join('');
+      } catch (e) { slotsGrid.innerHTML = '<p style="color:#f87171;">Could not load slots.</p>'; }
+    });
+
+    function selectSlot(time, el) {
+      if (el.classList.contains('unavailable')) return;
+      document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      booking.time = time;
+      document.getElementById('next-4').disabled = false;
+    }
+
+    function updatePaymentUI() {
+      const futureNotice = document.getElementById('future-notice');
+      const payNo = document.getElementById('pay-no');
+      if (isFutureDate) {
+        futureNotice.style.display = 'block';
+        payNo.disabled = true;
+        document.getElementById('pay-yes').checked = true;
+        document.getElementById('advance-amount-wrap').style.display = 'block';
+      } else {
+        futureNotice.style.display = 'none';
+        payNo.disabled = false;
+        payNo.checked = true;
+        document.getElementById('advance-amount-wrap').style.display = 'none';
+      }
+    }
+
+    document.querySelectorAll('input[name="advance"]').forEach(r => {
+      r.addEventListener('change', () => {
+        document.getElementById('advance-amount-wrap').style.display = r.value === 'yes' ? 'block' : 'none';
+      });
+    });
+
+    function updateSummary() {
+      document.getElementById('sum-type').textContent = booking.type === 'home' ? '🏠 Home Visit' : '🏢 In-Shop';
+      document.getElementById('sum-service').textContent = booking.serviceName;
+      document.getElementById('sum-barber').textContent = booking.barber;
+      document.getElementById('sum-date').textContent = booking.date;
+      document.getElementById('sum-time').textContent = booking.time;
+      document.getElementById('sum-duration').textContent = booking.duration + ' min';
+      document.getElementById('sum-price').textContent = '₹' + booking.price;
+    }
+
+    function goStep(n) {
+      document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('step-' + n).classList.add('active');
+      // Update progress dots
+      for (let i = 1; i <= 5; i++) {
+        const dot = document.getElementById('dot-' + i);
+        const lbl = document.getElementById('lbl-' + i);
+        if (i < n) { dot.className = 'step-dot done'; dot.textContent = '✓'; lbl.className = 'step-label'; }
+        else if (i === n) { dot.className = 'step-dot active'; dot.textContent = i; lbl.className = 'step-label active'; }
+        else { dot.className = 'step-dot'; dot.textContent = i; lbl.className = 'step-label'; }
+        if (i < 5) { document.getElementById('conn-' + i).className = 'step-connector' + (i < n ? ' done' : ''); }
+      }
+      // Step-specific actions
+      if (n === 2) loadServices();
+      if (n === 5) { updateSummary(); document.getElementById('address-group').style.display = booking.type === 'home' ? 'block' : 'none'; updatePaymentUI(); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function submitBooking() {
+      const name = document.getElementById('cust-name').value.trim();
+      const phone = document.getElementById('cust-phone').value.trim();
+      const address = document.getElementById('cust-address').value.trim();
+      const notes = document.getElementById('cust-notes').value.trim();
+      const payYes = document.getElementById('pay-yes').checked;
+      const advanceAmount = parseInt(document.getElementById('advance-amount').value) || 0;
+
+      if (!name) return showBookError('Please enter your name.');
+      if (!phone || phone.length !== 10) return showBookError('Please enter a valid 10-digit mobile number.');
+      if (booking.type === 'home' && !address) return showBookError('Please enter your address for home visit.');
+      if (payYes && (!advanceAmount || advanceAmount < 50)) return showBookError('Minimum advance amount is ₹50.');
+      if (payYes && advanceAmount > booking.price) return showBookError(`Advance cannot exceed ₹${booking.price}.`);
+
+      const btn = document.getElementById('book-now-btn');
+      btn.disabled = true; btn.textContent = 'Processing…';
+
+      const bookingDetails = { type: booking.type, service: booking.serviceName, barber: booking.barber, date: booking.date, time: booking.time, name, phone, address, notes, price: booking.price, duration: booking.duration };
+
+      try {
+        if (payYes) {
+          // Cashfree payment flow
+          const res = await fetch('/api/create-order', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ advanceAmount, bookingDetails }) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          const cashfree = Cashfree({ mode: 'production' });
+          cashfree.checkout({ paymentSessionId: data.paymentSessionId, redirectTarget: '_modal' });
+        } else {
+          // Direct booking
+          const res = await fetch('/api/bookings', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(bookingDetails) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          showSuccess(data.id, bookingDetails);
+        }
+      } catch (err) { showBookError(err.message); }
+      btn.disabled = false; btn.textContent = 'Book Now ✂️';
+    }
+
+    async function verifyAndShowSuccess(orderId, bookingId) {
+      try {
+        const res = await fetch('/api/verify-payment', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ order_id: orderId, booking_id: bookingId }) });
+        const data = await res.json();
+        if (data.status === 'PAID') {
+          document.querySelectorAll('.wizard-panel').forEach(p => p.style.display = 'none');
+          document.getElementById('progress-track').style.display = 'none';
+          document.querySelector('.book-header').style.display = 'none';
+          document.getElementById('booking-success').style.display = 'block';
+          document.getElementById('success-id').textContent = '#' + bookingId;
+          document.getElementById('success-service').textContent = 'Booking #' + bookingId;
+          document.getElementById('success-datetime').textContent = 'Payment verified successfully';
+        }
+      } catch(e) {}
+    }
+
+    function showSuccess(id, b) {
+      document.querySelectorAll('.wizard-panel').forEach(p => p.style.display = 'none');
+      document.getElementById('progress-track').style.display = 'none';
+      document.querySelector('.book-header').style.display = 'none';
+      document.getElementById('booking-success').style.display = 'block';
+      document.getElementById('success-id').textContent = '#' + id;
+      document.getElementById('success-service').textContent = b.service;
+      document.getElementById('success-datetime').textContent = b.date + ' at ' + b.time;
+    }
+
+    function showBookError(msg) {
+      const el = document.getElementById('book-error');
+      el.textContent = '❌ ' + msg; el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>

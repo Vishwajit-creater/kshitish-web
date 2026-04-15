@@ -1,0 +1,167 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us – Urban Hairplaza</title>
+  <meta name="description" content="Get in touch with Urban Hairplaza. Visit us at Simraha, Araria, call us, or send a message online.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 48px; align-items: start; }
+    .contact-info-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 16px; display: flex; gap: 16px; align-items: flex-start; transition: var(--transition); }
+    .contact-info-card:hover { border-color: var(--border-gold); }
+    .contact-icon { font-size: 24px; flex-shrink: 0; margin-top: 4px; }
+    .contact-info-title { font-size: 12px; font-family: 'DM Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+    .contact-info-val { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+    .contact-form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; }
+    @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></a>
+      <div class="nav-links"><a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a><a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a><a href="about.html">About Us</a><a href="contact.html" class="active">Contact Us</a></div>
+      <div class="nav-actions" style="display:flex;gap:12px;align-items:center;"><a href="login.html" class="btn-ghost btn-sm">Login</a><a href="book.html" class="btn-primary btn-sm">Book Now</a></div>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+  <div id="mobile-menu">
+    <a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a><a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a><a href="login.html">Login</a><a href="book.html" class="btn-primary" style="text-align:center;margin-top:8px;">Book Now</a>
+  </div>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Home</a><span>›</span>Contact Us</div>
+      <div class="section-label" style="justify-content:center;">Get In Touch</div>
+      <h1>Contact Us</h1>
+      <p style="color:var(--text-muted);margin-top:16px;">We'd love to hear from you. Visit, call, or drop us a message.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="contact-grid">
+        <!-- Info Column -->
+        <div class="reveal">
+          <div class="contact-info-card">
+            <div class="contact-icon">📍</div>
+            <div>
+              <div class="contact-info-title">Address</div>
+              <div class="contact-info-val">Near Phanishwar Narh Renu Statue,<br>Simraha, Araria – 854331, Bihar</div>
+            </div>
+          </div>
+          <div class="contact-info-card">
+            <div class="contact-icon">📱</div>
+            <div>
+              <div class="contact-info-title">Phone Numbers</div>
+              <div class="contact-info-val">+91 6202 692 426<br>+91 73220 56520<br>+91 9241156709</div>
+            </div>
+          </div>
+          <div class="contact-info-card">
+            <div class="contact-icon">📧</div>
+            <div>
+              <div class="contact-info-title">Email</div>
+              <div class="contact-info-val"><a href="mailto:urbanhairplazapvtltd@gmail.com" style="color:var(--gold);">urbanhairplazapvtltd@gmail.com</a></div>
+            </div>
+          </div>
+          <div class="contact-info-card">
+            <div class="contact-icon">🕐</div>
+            <div>
+              <div class="contact-info-title">Business Hours</div>
+              <div class="contact-info-val">Monday – Sunday<br>9:00 AM – 9:00 PM</div>
+            </div>
+          </div>
+          <a href="https://wa.me/916202692426" target="_blank" class="btn-primary" style="width:100%;text-align:center;display:block;margin-top:8px;">💬 Chat on WhatsApp</a>
+        </div>
+
+        <!-- Form Column -->
+        <div class="contact-form-card reveal reveal-delay-1">
+          <h3 style="margin-bottom:8px;">Send Us a Message</h3>
+          <p style="color:var(--text-muted);font-size:14px;margin-bottom:28px;">Fill the form and we'll get back to you promptly.</p>
+          <div id="contact-success" style="display:none;padding:16px 20px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:var(--radius-sm);color:#4ade80;margin-bottom:20px;">
+            ✅ Your message has been sent! We'll get back to you soon.
+          </div>
+          <div id="contact-error" style="display:none;padding:16px 20px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:var(--radius-sm);color:#f87171;margin-bottom:20px;"></div>
+          <form id="contact-form">
+            <div class="form-group">
+              <label class="form-label" for="c-name">Your Name *</label>
+              <input type="text" id="c-name" class="form-input" placeholder="Enter your full name" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-phone">Phone Number *</label>
+              <input type="tel" id="c-phone" class="form-input" placeholder="10-digit mobile number" maxlength="10" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-email">Email (Optional)</label>
+              <input type="email" id="c-email" class="form-input" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-subject">Subject *</label>
+              <select id="c-subject" class="form-select" required>
+                <option value="">Select a subject</option>
+                <option value="General Inquiry">General Inquiry</option>
+                <option value="Booking Help">Booking Help</option>
+                <option value="Service Inquiry">Service Inquiry</option>
+                <option value="Home Visit Inquiry">Home Visit Inquiry</option>
+                <option value="Feedback">Feedback</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-message">Message *</label>
+              <textarea id="c-message" class="form-textarea" placeholder="Write your message here..." required></textarea>
+            </div>
+            <button type="submit" id="contact-submit" class="btn-primary" style="width:100%;justify-content:center;">Send Message ✉️</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer id="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand"><div class="logo" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></div><p class="footer-tagline">Your Style, Your Place.</p><div class="footer-socials"><a href="#">📷</a><a href="#">📘</a><a href="https://wa.me/916202692426">💬</a><a href="mailto:urbanhairplazapvtltd@gmail.com">✉️</a></div></div>
+        <nav class="footer-col"><h5>Quick Links</h5><ul class="footer-links"><li><a href="index.html">Home</a></li><li><a href="services.html">Services</a></li><li><a href="barbers.html">Our Barbers</a></li><li><a href="gallery.html">Gallery</a></li></ul></nav>
+        <nav class="footer-col"><h5>Company</h5><ul class="footer-links"><li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact Us</a></li><li><a href="book.html">Book Now</a></li></ul></nav>
+        <div class="footer-col"><h5>Contact Us</h5><div class="footer-contact-item">📍 Simraha, Araria – 854331, Bihar</div><div class="footer-contact-item">📱 +91 6202 692 426</div><div class="footer-contact-item">🕐 Mon – Sun, 9:00 AM – 9:00 PM</div></div>
+      </div>
+      <div class="footer-bottom"><span>© 2025 Urban Hairplaza Private Limited. All rights reserved.</span><span>Crafted with ❤️ by <a href="#">Vishwajit Yadav</a></span></div>
+    </div>
+  </footer>
+  <div id="toast"></div>
+  <script src="main.js"></script>
+  <script>
+    document.getElementById('contact-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('contact-submit');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      const body = {
+        name: document.getElementById('c-name').value.trim(),
+        phone: document.getElementById('c-phone').value.trim(),
+        email: document.getElementById('c-email').value.trim(),
+        subject: document.getElementById('c-subject').value,
+        message: document.getElementById('c-message').value.trim()
+      };
+      try {
+        const res = await fetch('/api/enquiries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('contact-success').style.display = 'block';
+          document.getElementById('contact-error').style.display = 'none';
+          document.getElementById('contact-form').reset();
+        } else {
+          throw new Error(data.error || 'Failed to send');
+        }
+      } catch (err) {
+        document.getElementById('contact-error').textContent = '❌ ' + err.message;
+        document.getElementById('contact-error').style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Send Message ✉️';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile – Urban Hairplaza</title>
+  <meta name="description" content="View your Urban Hairplaza profile and booking history.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .profile-page { padding-top: calc(var(--nav-h) + 60px); padding-bottom: 80px; min-height: 100vh; }
+    .profile-header-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--border-gold); border-radius: 16px; padding: 40px 48px; display: flex; align-items: center; gap: 32px; margin-bottom: 32px; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--gold); color: var(--black); font-size: 32px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .profile-name { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .profile-phone { color: var(--text-muted); font-size: 15px; margin-bottom: 4px; }
+    .profile-since { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+    .profile-stats { display: flex; gap: 0; margin-left: auto; }
+    .stat-item { text-align: center; padding: 0 28px; border-left: 1px solid var(--border); }
+    .stat-item:first-child { border-left: none; }
+    .stat-val { font-size: 28px; font-weight: 900; font-family: 'Playfair Display', serif; color: var(--gold); }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
+    .bookings-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .bookings-card-header { padding: 24px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .bookings-table { width: 100%; border-collapse: collapse; }
+    .bookings-table th { padding: 14px 20px; text-align: left; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+    .bookings-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text-muted); vertical-align: middle; }
+    .bookings-table tr:last-child td { border-bottom: none; }
+    .bookings-table td:first-child { color: var(--text); font-weight: 500; }
+    .empty-state { padding: 60px; text-align: center; color: var(--text-dim); }
+    .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+    @media (max-width: 768px) {
+      .profile-header-card { flex-direction: column; text-align: center; }
+      .profile-stats { margin-left: 0; width: 100%; justify-content: center; }
+      .stat-item:first-child { border-left: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></a>
+      <div class="nav-links"><a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a><a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a></div>
+      <div class="nav-actions" style="display:flex;gap:12px;align-items:center;"><a href="book.html" class="btn-primary btn-sm">Book Now</a></div>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="profile-page">
+    <div class="container">
+      <!-- Loading State -->
+      <div id="loading-state" style="text-align:center;padding:60px;">
+        <div class="spinner"></div>
+        <p style="color:var(--text-muted);margin-top:16px;">Loading your profile…</p>
+      </div>
+
+      <!-- Profile Content -->
+      <div id="profile-content" style="display:none;">
+        <div class="profile-header-card reveal">
+          <div class="profile-avatar" id="profile-avatar">U</div>
+          <div>
+            <div class="profile-name" id="profile-name">Loading…</div>
+            <div class="profile-phone" id="profile-phone"></div>
+            <div class="profile-since" id="profile-since"></div>
+          </div>
+          <div class="profile-stats">
+            <div class="stat-item">
+              <div class="stat-val" id="stat-total">0</div>
+              <div class="stat-label">Total Bookings</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="stat-upcoming">0</div>
+              <div class="stat-label">Upcoming</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="stat-spent">₹0</div>
+              <div class="stat-label">Amount Spent</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking History -->
+        <div class="bookings-card reveal">
+          <div class="bookings-card-header">
+            <h3 style="font-size:20px;">📋 Booking History</h3>
+            <div style="display:flex;gap:12px;">
+              <a href="book.html" class="btn-primary btn-sm">+ New Booking</a>
+              <button id="logout-btn" class="btn-ghost btn-sm">Logout</button>
+            </div>
+          </div>
+          <div id="bookings-body">
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <div>Loading bookings…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="main.js"></script>
+  <script>
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) { window.location.href = 'login.html?redirect=profile.html'; return; }
+        const { user, stats } = await res.json();
+        document.getElementById('profile-avatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('profile-name').textContent = user.name;
+        document.getElementById('profile-phone').textContent = '+91 ' + user.phone;
+        const since = new Date(user.created_at);
+        document.getElementById('profile-since').textContent = 'Member since ' + since.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+        document.getElementById('stat-total').textContent = stats.total || 0;
+        document.getElementById('stat-upcoming').textContent = stats.upcoming || 0;
+        document.getElementById('stat-spent').textContent = '₹' + (stats.spent || 0);
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('profile-content').style.display = 'block';
+        loadBookings();
+      } catch (e) { window.location.href = 'login.html'; }
+    }
+
+    async function loadBookings() {
+      try {
+        const res = await fetch('/api/user/bookings');
+        if (!res.ok) throw new Error('Failed');
+        const bookings = await res.json();
+        const container = document.getElementById('bookings-body');
+        if (!bookings.length) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✂️</div><div>No bookings yet.<br><a href="book.html" style="color:var(--gold);">Book your first appointment →</a></div></div>';
+          return;
+        }
+        container.innerHTML = `<table class="bookings-table">
+          <thead><tr>
+            <th>Service</th><th>Barber</th><th>Date & Time</th><th>Type</th><th>Price</th><th>Status</th>
+          </tr></thead>
+          <tbody>${bookings.map(b => `<tr>
+            <td>${b.service}</td>
+            <td>${b.barber}</td>
+            <td>${b.date}<br><small>${b.time}</small></td>
+            <td>${b.type === 'home' ? '🏠 Home' : '🏢 In-Shop'}</td>
+            <td>₹${b.price}${b.advance_paid > 0 ? `<br><small style="color:var(--gold);">+₹${b.advance_paid} paid</small>` : ''}</td>
+            <td><span class="badge badge-${b.status}">${b.status.replace('_', ' ')}</span></td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+      } catch (e) { document.getElementById('bookings-body').innerHTML = '<div class="empty-state">Failed to load bookings.</div>'; }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = 'index.html';
+    });
+
+    loadProfile();
+  </script>
+</body>
+</html>

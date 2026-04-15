@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – Urban Hairplaza</title>
+  <meta name="description" content="Login or register with Urban Hairplaza using your mobile number OTP.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .login-page {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 60%);
+      padding: calc(var(--nav-h) + 40px) 24px 40px;
+    }
+    .login-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 440px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo .logo-icon { width: 56px; height: 56px; background: var(--gold); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px; }
+    .phase { display: none; }
+    .phase.active { display: block; }
+    .otp-inputs { display: flex; gap: 8px; justify-content: center; margin: 20px 0; }
+    .otp-inputs input { width: 46px; height: 56px; text-align: center; font-size: 22px; font-weight: 700; background: var(--dark2); border: 2px solid var(--border); border-radius: var(--radius-sm); color: var(--text); outline: none; transition: var(--transition); }
+    .otp-inputs input:focus { border-color: var(--gold); }
+    .resend-btn { background: none; border: none; color: var(--gold); font-size: 14px; cursor: pointer; margin-top: 8px; }
+    .resend-btn:disabled { color: var(--text-dim); cursor: default; }
+    @media (max-width: 480px) { .login-card { padding: 32px 24px; } }
+  </style>
+</head>
+<body>
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></a>
+      <div class="nav-links"><a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a></div>
+      <div class="nav-actions" style="display:flex;gap:12px;align-items:center;"><a href="book.html" class="btn-primary btn-sm">Book Now</a></div>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-icon">✂️</div>
+        <h3 style="margin-bottom:4px;">Welcome Back</h3>
+        <p style="color:var(--text-muted);font-size:14px;">Login with your mobile number</p>
+      </div>
+      <div id="error-banner" style="display:none;padding:12px 16px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:var(--radius-sm);color:#f87171;font-size:14px;margin-bottom:16px;"></div>
+
+      <!-- Phase 1: Phone -->
+      <div class="phase active" id="phase-phone">
+        <div class="form-group">
+          <label class="form-label" for="phone-input">Mobile Number</label>
+          <div style="display:flex;align-items:center;gap:0;">
+            <span style="background:var(--dark2);border:1px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);padding:14px 14px;color:var(--text-muted);font-size:15px;">+91</span>
+            <input type="tel" id="phone-input" class="form-input" placeholder="10-digit mobile number" maxlength="10" style="border-radius:0 var(--radius-sm) var(--radius-sm) 0;">
+          </div>
+        </div>
+        <button id="send-otp-btn" class="btn-primary" style="width:100%;justify-content:center;">Send OTP 📱</button>
+        <p style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-muted);">By continuing, you agree to receive an OTP via SMS.</p>
+      </div>
+
+      <!-- Phase 2: OTP -->
+      <div class="phase" id="phase-otp">
+        <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">OTP sent to <strong style="color:var(--white);" id="phone-display"></strong></p>
+        <div class="otp-inputs" id="otp-inputs">
+          <input type="text" maxlength="1" inputmode="numeric" id="otp-0">
+          <input type="text" maxlength="1" inputmode="numeric" id="otp-1">
+          <input type="text" maxlength="1" inputmode="numeric" id="otp-2">
+          <input type="text" maxlength="1" inputmode="numeric" id="otp-3">
+          <input type="text" maxlength="1" inputmode="numeric" id="otp-4">
+          <input type="text" maxlength="1" inputmode="numeric" id="otp-5">
+        </div>
+        <div id="new-user-name-wrap" style="display:none;">
+          <div class="form-group">
+            <label class="form-label" for="name-input">Your Name (New Account)</label>
+            <input type="text" id="name-input" class="form-input" placeholder="Enter your full name">
+          </div>
+        </div>
+        <button id="verify-btn" class="btn-primary" style="width:100%;justify-content:center;">Verify & Login ✅</button>
+        <div style="text-align:center;margin-top:12px;">
+          <button class="resend-btn" id="resend-btn" disabled>Resend OTP (<span id="countdown">60</span>s)</button>
+        </div>
+        <button onclick="document.getElementById('phase-phone').classList.add('active');document.getElementById('phase-otp').classList.remove('active');" style="width:100%;margin-top:8px;text-align:center;color:var(--text-muted);font-size:14px;background:none;border:none;cursor:pointer;">← Change number</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="main.js"></script>
+  <script>
+    let isNewUser = false;
+    let phone = '';
+    let countdownTimer;
+
+    document.getElementById('send-otp-btn').addEventListener('click', async () => {
+      phone = document.getElementById('phone-input').value.trim();
+      if (phone.length !== 10 || !/^\d+$/.test(phone)) { showError('Please enter a valid 10-digit mobile number.'); return; }
+      const btn = document.getElementById('send-otp-btn');
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const res = await fetch('/api/auth/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ phone }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        isNewUser = data.isNew;
+        document.getElementById('phone-display').textContent = '+91 ' + phone;
+        document.getElementById('new-user-name-wrap').style.display = isNewUser ? 'block' : 'none';
+        document.getElementById('phase-phone').classList.remove('active');
+        document.getElementById('phase-otp').classList.add('active');
+        document.getElementById('otp-0').focus();
+        startCountdown();
+        clearError();
+      } catch (err) { showError(err.message); }
+      btn.disabled = false; btn.textContent = 'Send OTP 📱';
+    });
+
+    // OTP auto-advance
+    document.querySelectorAll('.otp-inputs input').forEach((input, i) => {
+      input.addEventListener('input', () => { if (input.value && i < 5) document.getElementById(`otp-${i+1}`).focus(); });
+      input.addEventListener('keydown', e => { if (e.key === 'Backspace' && !input.value && i > 0) document.getElementById(`otp-${i-1}`).focus(); });
+    });
+
+    document.getElementById('verify-btn').addEventListener('click', async () => {
+      const otp = Array.from({length:6}, (_,i) => document.getElementById(`otp-${i}`).value).join('');
+      if (otp.length !== 6) { showError('Enter the 6-digit OTP.'); return; }
+      const name = document.getElementById('name-input').value.trim();
+      if (isNewUser && !name) { showError('Please enter your name to create your account.'); return; }
+      const btn = document.getElementById('verify-btn');
+      btn.disabled = true; btn.textContent = 'Verifying...';
+      try {
+        const body = { phone, otp };
+        if (isNewUser) body.name = name;
+        const res = await fetch('/api/auth/verify-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        showToast('✅ Welcome, ' + data.user.name + '!');
+        const redirect = new URLSearchParams(window.location.search).get('redirect') || 'profile.html';
+        setTimeout(() => window.location.href = redirect, 1000);
+      } catch (err) { showError(err.message); }
+      btn.disabled = false; btn.textContent = 'Verify & Login ✅';
+    });
+
+    document.getElementById('resend-btn').addEventListener('click', async () => {
+      document.getElementById('resend-btn').disabled = true;
+      document.getElementById('send-otp-btn').click();
+    });
+
+    function startCountdown() {
+      let t = 60;
+      document.getElementById('resend-btn').disabled = true;
+      clearInterval(countdownTimer);
+      countdownTimer = setInterval(() => {
+        document.getElementById('countdown').textContent = --t;
+        if (t <= 0) { clearInterval(countdownTimer); document.getElementById('resend-btn').disabled = false; document.getElementById('resend-btn').textContent = 'Resend OTP'; }
+      }, 1000);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-banner');
+      el.textContent = '❌ ' + msg; el.style.display = 'block';
+    }
+    function clearError() { document.getElementById('error-banner').style.display = 'none'; }
+
+    // Check if already logged in
+    fetch('/api/auth/me').then(r => { if (r.ok) window.location.href = 'profile.html'; }).catch(()=>{});
+  </script>
+</body>
+</html>

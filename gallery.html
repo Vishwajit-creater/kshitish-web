@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Work – Urban Hairplaza Gallery</title>
+  <meta name="description" content="Browse our photo gallery showcasing precision haircuts, fades, shaves, and the vibrant atmosphere of Urban Hairplaza.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .gallery-full-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .gallery-full-grid .gallery-item { height: 280px; border-radius: var(--radius); }
+    .gallery-full-grid .gallery-item.large { grid-column: span 2; }
+    .gallery-full-grid .gallery-item.tall { grid-row: span 2; height: auto; min-height: 280px; }
+    @media (max-width: 768px) {
+      .gallery-full-grid { grid-template-columns: 1fr; }
+      .gallery-full-grid .gallery-item.large, .gallery-full-grid .gallery-item.tall { grid-column: span 1; grid-row: span 1; height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></a>
+      <div class="nav-links"><a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a><a href="gallery.html" class="active">Gallery</a><a href="visualizer.html">AI Visualizer</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a></div>
+      <div class="nav-actions" style="display:flex;gap:12px;align-items:center;"><a href="login.html" class="btn-ghost btn-sm">Login</a><a href="book.html" class="btn-primary btn-sm">Book Now</a></div>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+  <div id="mobile-menu">
+    <a href="index.html">Home</a><a href="services.html">Services</a><a href="barbers.html">Our Barbers</a><a href="gallery.html">Gallery</a><a href="visualizer.html">AI Visualizer</a><a href="about.html">About Us</a><a href="contact.html">Contact Us</a><a href="login.html">Login</a><a href="book.html" class="btn-primary" style="text-align:center;margin-top:8px;">Book Now</a>
+  </div>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Home</a><span>›</span>Gallery</div>
+      <div class="section-label" style="justify-content:center;">Our Work</div>
+      <h1>The Craft in Focus</h1>
+      <p style="color:var(--text-muted);margin-top:16px;">Browse our portfolio of precision cuts, fades, shaves, and happy clients.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="gallery-full-grid reveal">
+        <div class="gallery-item large tall">
+          <img src="images/gallery_fade_haircut.png" alt="Fade Haircut" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#252525,#1E1E1E)'">
+          <div class="gallery-overlay">🔍</div>
+        </div>
+        <div class="gallery-item">
+          <img src="images/gallery_shop_interior.png" alt="Shop Interior" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#1E1E1E,#252525)'">
+          <div class="gallery-overlay">🔍</div>
+        </div>
+        <div class="gallery-item">
+          <img src="images/gallery_happy_client.png" alt="Happy Client" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#252525,#1a1a1a)'">
+          <div class="gallery-overlay">🔍</div>
+        </div>
+        <div class="gallery-item large">
+          <img src="images/gallery_barber_tools.png" alt="Barber Tools" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#1E1E1E,#252525)'">
+          <div class="gallery-overlay">🔍</div>
+        </div>
+        <div class="gallery-item">
+          <img src="images/service_beard.png" alt="Beard Trim" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#252525,#1E1E1E)'">
+          <div class="gallery-overlay">🔍</div>
+        </div>
+        <div class="gallery-item large">
+          <img src="images/service_haircut.png" alt="Classic Cut" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#1E1E1E,#252525)'">
+          <div class="gallery-overlay">🔍</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-sm" style="background:var(--dark2);">
+    <div class="container text-center reveal">
+      <h2 style="margin-bottom:16px;">Like What You See?</h2>
+      <p style="color:var(--text-muted);margin-bottom:32px;">Book your appointment and get your own perfect look.</p>
+      <a href="book.html" class="btn-primary btn-lg">Book Now ✂️</a>
+    </div>
+  </section>
+
+  <footer id="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand"><div class="logo" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><div class="logo-icon">✂️</div><div class="logo-text"><span class="logo-name">Urban Hairplaza</span><span class="logo-sub">Premium Barbershop</span></div></div><p class="footer-tagline">Your Style, Your Place.</p><div class="footer-socials"><a href="#">📷</a><a href="#">📘</a><a href="https://wa.me/916202692426">💬</a><a href="mailto:urbanhairplazapvtltd@gmail.com">✉️</a></div></div>
+        <nav class="footer-col"><h5>Quick Links</h5><ul class="footer-links"><li><a href="index.html">Home</a></li><li><a href="services.html">Services</a></li><li><a href="barbers.html">Our Barbers</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="visualizer.html">AI Visualizer</a></li></ul></nav>
+        <nav class="footer-col"><h5>Company</h5><ul class="footer-links"><li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact Us</a></li><li><a href="book.html">Book Now</a></li></ul></nav>
+        <div class="footer-col"><h5>Contact Us</h5><div class="footer-contact-item">📍 Simraha, Araria – 854331, Bihar</div><div class="footer-contact-item">📱 +91 6202 692 426</div><div class="footer-contact-item">🕐 Mon – Sun, 9:00 AM – 9:00 PM</div></div>
+      </div>
+      <div class="footer-bottom"><span>© 2025 Urban Hairplaza Private Limited. All rights reserved.</span><span>Crafted with ❤️ by <a href="#">Vishwajit Yadav</a></span></div>
+    </div>
+  </footer>
+  <div id="lightbox" class="lightbox">
+    <button class="lightbox-close" id="lightbox-close">✕</button>
+    <img id="lightbox-img" src="" alt="Gallery Image">
+  </div>
+  <div id="toast"></div>
+  <script src="main.js"></script>
+</body>
+</html>
