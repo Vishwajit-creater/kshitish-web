@@ -1,4 +1,6 @@
 ﻿require('dotenv').config();
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const session = require('express-session');
 const { Pool } = require('pg');
@@ -10,8 +12,10 @@ const app = express();
 const PORT = process.env.PORT || 7890;
 
 // ─── Database ────────────────────────────────────────────────────────────────
+// Strip sslmode from URL so pg doesn't override our ssl object
+const dbUrl = (process.env.DATABASE_URL || '').replace(/[?&]sslmode=[^&]*/g, '').replace(/[?&]channel_binding=[^&]*/g, '').replace(/\?&/, '?');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl,
   ssl: { rejectUnauthorized: false }
 });
 
@@ -41,7 +45,7 @@ async function initDB() {
       name TEXT NOT NULL,
       price INTEGER DEFAULT 0,
       duration INTEGER DEFAULT 0,
-      desc TEXT DEFAULT '',
+      "desc" TEXT DEFAULT '',
       icon TEXT DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS bookings (
@@ -92,7 +96,7 @@ async function initDB() {
     ];
     for (const s of services) {
       await pool.query(
-        'INSERT INTO services (id, type, name, price, duration, desc, icon) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+        'INSERT INTO services (id, type, name, price, duration, "desc", icon) VALUES ($1,$2,$3,$4,$5,$6,$7)',
         [s.id, s.type, s.name, s.price, s.duration, s.desc, s.icon]
       );
     }
@@ -203,7 +207,7 @@ app.post('/api/create-order', async (req, res) => {
         order_amount: advanceAmount,
         order_currency: 'INR',
         customer_details: { customer_id: 'UHP' + bookingId, customer_phone: phone, customer_name: name },
-        order_meta: { return_url: `${process.env.BASE_URL}/book.html?payment=success&order_id=${orderId}&booking_id=${bookingId}` }
+        order_meta: { return_url: `${(process.env.CASHFREE_RETURN_URL || process.env.BASE_URL).replace("http://","https://")}/book.html?payment=success&order_id=${orderId}&booking_id=${bookingId}`, notify_url: undefined }
       },
       {
         headers: {
@@ -493,7 +497,7 @@ app.post('/api/admin/services', requireAdmin, async (req, res) => {
     const { type, name, price, duration, desc, icon } = req.body;
     const id = genId();
     await pool.query(
-      'INSERT INTO services (id, type, name, price, duration, desc, icon) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+      'INSERT INTO services (id, type, name, price, duration, "desc", icon) VALUES ($1,$2,$3,$4,$5,$6,$7)',
       [id, type, name, parseInt(price) || 0, parseInt(duration) || 0, desc || '', icon || '✂️']
     );
     res.json({ success: true, id });
@@ -505,7 +509,7 @@ app.put('/api/admin/services/:id', requireAdmin, async (req, res) => {
   try {
     const { type, name, price, duration, desc, icon } = req.body;
     await pool.query(
-      'UPDATE services SET type=$1, name=$2, price=$3, duration=$4, desc=$5, icon=$6 WHERE id=$7',
+      'UPDATE services SET type=$1, name=$2, price=$3, duration=$4, "desc"=$5, icon=$6 WHERE id=$7',
       [type, name, parseInt(price) || 0, parseInt(duration) || 0, desc || '', icon || '✂️', req.params.id]
     );
     res.json({ success: true });
@@ -527,3 +531,9 @@ initDB().then(() => {
   console.error('DB init failed:', err.message);
   process.exit(1);
 });
+
+
+
+
+
+
