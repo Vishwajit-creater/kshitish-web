@@ -1,13 +1,1 @@
-{
-  "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "npm install"
-  },
-  "deploy": {
-    "startCommand": "node server.js",
-    "healthcheckPath": "/api/services",
-    "healthcheckTimeout": 30,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
-  }
-}
+{"deploy":{"startCommand":"node server.js","restartPolicyType":"ON_FAILURE"}}
