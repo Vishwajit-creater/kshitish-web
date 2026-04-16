@@ -1,0 +1,1 @@
+﻿{"build":{"builder":"NIXPACKS"},"deploy":{"startCommand":"node server.js","healthcheckPath":"/api/services","restartPolicyType":"ON_FAILURE","restartPolicyMaxRetries":3}}

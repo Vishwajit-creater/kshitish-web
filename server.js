@@ -12,21 +12,29 @@ const app = express();
 const PORT = process.env.PORT || 7890;
 
 // ─── Database ────────────────────────────────────────────────────────────────
-// Strip sslmode from URL so pg doesn't override our ssl object
-const dbUrl = (process.env.DATABASE_URL || '').replace(/[?&]sslmode=[^&]*/g, '').replace(/[?&]channel_binding=[^&]*/g, '').replace(/\?&/, '?');
+// Database pool - handles both Neon (Railway) and local
 const pool = new Pool({
-  connectionString: dbUrl,
-  ssl: { rejectUnauthorized: false }
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('neon.tech')
+    ? { rejectUnauthorized: false }
+    : process.env.DATABASE_URL && process.env.DATABASE_URL.includes('supabase')
+    ? { rejectUnauthorized: false }
+    : false
 });
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
+// Trust Railway's proxy (required for HTTPS cookies on Railway)
+app.set('trust proxy', 1);
 app.use(session({
   secret: process.env.SESSION_SECRET || 'urban_hairplaza_secret_key_2025',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS on Railway, HTTP locally
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  }
 }));
 app.use(express.static(path.join(__dirname)));
 
@@ -531,6 +539,7 @@ initDB().then(() => {
   console.error('DB init failed:', err.message);
   process.exit(1);
 });
+
 
 
 
