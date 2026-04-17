@@ -162,30 +162,49 @@ app.get('/api/services', async (req, res) => {
 });
 
 // GET /api/available-slots?date=YYYY-MM-DD
+// Returns bookedTimes (exact booked slots) and blockedTimes (overflow slots from multi-slot services)
 app.get('/api/available-slots', async (req, res) => {
   try {
     const { date } = req.query;
+    const ALL_SLOTS = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM'];
     const { rows } = await pool.query(
-      `SELECT time FROM bookings WHERE date=$1 AND status NOT IN ('cancelled') GROUP BY time HAVING COUNT(*) >= 1`,
+      `SELECT time, duration FROM bookings WHERE date=$1 AND status NOT IN ('cancelled')`,
       [date]
     );
-    res.json({ bookedTimes: rows.map(r => r.time) });
+    const bookedTimes = [...new Set(rows.map(r => r.time))];
+    const blockedSet = new Set();
+    rows.forEach(r => {
+      const slotsNeeded = Math.ceil((parseInt(r.duration) || 30) / 30);
+      const startIdx = ALL_SLOTS.indexOf(r.time);
+      if (startIdx === -1) return;
+      for (let i = 1; i < slotsNeeded; i++) {
+        if (startIdx + i < ALL_SLOTS.length) blockedSet.add(ALL_SLOTS[startIdx + i]);
+      }
+    });
+    const blockedTimes = [...blockedSet].filter(t => !bookedTimes.includes(t));
+    res.json({ bookedTimes, blockedTimes });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-
 // POST /api/bookings
 app.post('/api/bookings', async (req, res) => {
   try {
     const { type, service, barber, date, time, name, phone, address, notes, price, duration } = req.body;
-    // Slot conflict guard � one active booking blocks this slot
-    const conflict = await pool.query(
-      `SELECT id FROM bookings WHERE date=$1 AND time=$2 AND status NOT IN ('cancelled') LIMIT 1`,
-      [date, time]
+    // Slot conflict guard: overlap check (supports multi-slot services)
+    const ALL_SLOTS_BK = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM'];
+    const existingBk = await pool.query(
+      `SELECT time, duration FROM bookings WHERE date=$1 AND status NOT IN ('cancelled')`,
+      [date]
     );
-    if (conflict.rows.length > 0) {
-      return res.status(409).json({ error: 'This time slot has already been booked. Please choose a different slot.' });
+    const newBkIdx = ALL_SLOTS_BK.indexOf(time);
+    const newBkSlots = Math.ceil((parseInt(duration) || 30) / 30);
+    for (const b of existingBk.rows) {
+      const bIdx = ALL_SLOTS_BK.indexOf(b.time);
+      const bSlots = Math.ceil((parseInt(b.duration) || 30) / 30);
+      if (newBkIdx < bIdx + bSlots && newBkIdx + newBkSlots > bIdx) {
+        return res.status(409).json({ error: 'This time slot is unavailable (overlaps with an existing booking). Please choose a different slot.' });
+      }
     }
-    const id = genId();
+const id = genId();
     await pool.query(
       `INSERT INTO bookings (id, type, service, barber, date, time, name, phone, address, notes, price, duration)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
@@ -207,17 +226,23 @@ app.post('/api/create-order', async (req, res) => {
   try {
     const { advanceAmount, bookingDetails } = req.body;
     const orderId = 'UHP-' + genId();
-    // Store pending booking
     const { type, service, barber, date, time, name, phone, address, notes, price, duration } = bookingDetails;
-    // Slot conflict guard (payment) � one active booking blocks this slot
-    const conflictPay = await pool.query(
-      `SELECT id FROM bookings WHERE date=$1 AND time=$2 AND status NOT IN ('cancelled') LIMIT 1`,
-      [date, time]
+    // Slot conflict guard (payment): overlap check (supports multi-slot services)
+    const ALL_SLOTS_PAY = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM'];
+    const existingPay = await pool.query(
+      `SELECT time, duration FROM bookings WHERE date=$1 AND status NOT IN ('cancelled')`,
+      [date]
     );
-    if (conflictPay.rows.length > 0) {
-      return res.status(409).json({ error: 'This time slot has already been booked. Please choose a different slot.' });
+    const newPayIdx = ALL_SLOTS_PAY.indexOf(time);
+    const newPaySlots = Math.ceil((parseInt(duration) || 30) / 30);
+    for (const b of existingPay.rows) {
+      const bIdx = ALL_SLOTS_PAY.indexOf(b.time);
+      const bSlots = Math.ceil((parseInt(b.duration) || 30) / 30);
+      if (newPayIdx < bIdx + bSlots && newPayIdx + newPaySlots > bIdx) {
+        return res.status(409).json({ error: 'This time slot is unavailable (overlaps with an existing booking). Please choose a different slot.' });
+      }
     }
-    const bookingId = genId();
+const bookingId = genId();
     await pool.query(
       `INSERT INTO bookings (id, type, service, barber, date, time, name, phone, address, notes, price, duration, status)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'payment_pending')`,
@@ -555,6 +580,10 @@ initDB().then(() => {
   console.error('DB init failed:', err.message);
   process.exit(1);
 });
+
+
+
+
 
 
 

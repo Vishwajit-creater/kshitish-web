@@ -154,7 +154,18 @@
             <input type="date" id="date-input" class="form-input" style="max-width:300px;">
           </div>
           <div id="slots-section" style="display:none;">
-            <label class="form-label">Available Time Slots</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+              <label class="form-label" style="margin-bottom:0;">Available Time Slots</label>
+              <div id="slot-duration-info" style="font-size:12px;font-family:'DM Mono',monospace;color:var(--gold);opacity:0.8;display:none;">
+                ⏱ This service needs <span id="slot-count-label">1</span> slot(s) · 30 min each
+              </div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;color:var(--text-dim);">
+              <span>🟡 Selected</span>
+              <span style="opacity:0.5;text-decoration:line-through;">Booked</span>
+              <span>🔒 In use</span>
+              <span style="color:rgba(248,113,113,0.6);">— No room</span>
+            </div>
             <div class="slots-grid" id="slots-grid"></div>
           </div>
           <div class="btn-row">
@@ -324,6 +335,88 @@
       document.getElementById('next-2').disabled = false;
       document.getElementById('max-advance').textContent = price;
       document.getElementById('advance-amount').max = price;
+      // Update slot duration info badge
+      const slotsNeededCount = Math.ceil((parseInt(duration) || 30) / 30);
+      const slotInfo = document.getElementById('slot-duration-info');
+      const slotCountLbl = document.getElementById('slot-count-label');
+      if (slotInfo && slotCountLbl) {
+        slotCountLbl.textContent = slotsNeededCount;
+        slotInfo.style.display = 'block';
+      }
+      // If slots were already loaded, re-evaluate availability with the new duration
+      if (currentBookedTimes.length > 0 || currentBlockedTimes.length > 0 || booking.date) {
+        // Reset any previously-selected slot since duration changed
+        booking.time = '';
+        document.getElementById('next-4').disabled = true;
+        renderSlots();
+      }
+    }
+
+    // ─── Slot State Tracking ────────────────────────────────────────────────────
+    // Each entry: 'available' | 'booked' | 'blocked' | 'insufficient'
+    let slotStates = {};
+    let currentBookedTimes = [];
+    let currentBlockedTimes = [];
+
+    /**
+     * Compute how many 30-min slots a service needs.
+     */
+    function slotsNeeded(durationMin) {
+      return Math.ceil((parseInt(durationMin) || 30) / 30);
+    }
+
+    /**
+     * Re-evaluate every slot's availability based on:
+     *  - API-returned bookedTimes & blockedTimes
+     *  - Whether enough consecutive free slots remain for the selected service
+     */
+    function computeSlotStates() {
+      const needed = slotsNeeded(booking.duration || 30);
+      slotStates = {};
+      ALL_SLOTS.forEach((t, i) => {
+        if (currentBookedTimes.includes(t)) {
+          slotStates[t] = 'booked';
+        } else if (currentBlockedTimes.includes(t)) {
+          slotStates[t] = 'blocked';
+        } else {
+          // Check if we have enough consecutive available slots starting here
+          let canFit = true;
+          for (let j = 0; j < needed; j++) {
+            const slot = ALL_SLOTS[i + j];
+            if (!slot || currentBookedTimes.includes(slot) || currentBlockedTimes.includes(slot)) {
+              canFit = false;
+              break;
+            }
+          }
+          slotStates[t] = canFit ? 'available' : 'insufficient';
+        }
+      });
+    }
+
+    /**
+     * Render slot buttons based on computed slotStates.
+     */
+    function renderSlots() {
+      computeSlotStates();
+      const slotsGrid = document.getElementById('slots-grid');
+      slotsGrid.innerHTML = ALL_SLOTS.map(t => {
+        const state = slotStates[t];
+        let cls = 'time-slot';
+        let label = t;
+        let tooltip = '';
+        if (state === 'booked') {
+          cls += ' unavailable';
+          tooltip = 'Already booked';
+        } else if (state === 'blocked') {
+          cls += ' blocked';
+          tooltip = 'In use';
+        } else if (state === 'insufficient') {
+          cls += ' insufficient';
+          tooltip = 'Not enough time';
+        }
+        const clickable = state === 'available';
+        return `<div class="${cls}" title="${tooltip}" ${clickable ? `onclick="selectSlot('${t}', this)"` : ''}>${label}</div>`;
+      }).join('');
     }
 
     const dateInput = document.getElementById('date-input');
@@ -344,19 +437,40 @@
       booking.time = '';
       try {
         const res = await fetch('/api/available-slots?date=' + selected);
-        const { bookedTimes } = await res.json();
-        slotsGrid.innerHTML = ALL_SLOTS.map(t => `
-          <div class="time-slot ${bookedTimes.includes(t) ? 'unavailable' : ''}" onclick="selectSlot('${t}', this)">${t}</div>
-        `).join('');
+        const data = await res.json();
+        currentBookedTimes = data.bookedTimes || [];
+        currentBlockedTimes = data.blockedTimes || [];
+        renderSlots();
       } catch (e) { slotsGrid.innerHTML = '<p style="color:#f87171;">Could not load slots.</p>'; }
     });
 
     function selectSlot(time, el) {
-      if (el.classList.contains('unavailable')) return;
-      document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+      // Guard: should not be reachable for non-available slots (onclick removed), but safety check
+      const state = slotStates[time];
+      if (!state || state !== 'available') return;
+      // Remove any previous selection + blocked-by-selection markers
+      document.querySelectorAll('.time-slot').forEach(s => {
+        s.classList.remove('selected');
+        if (s.dataset.overflow === '1') {
+          s.classList.remove('blocked');
+          s.dataset.overflow = '0';
+        }
+      });
       el.classList.add('selected');
       booking.time = time;
       document.getElementById('next-4').disabled = false;
+      // Visually mark the overflow slots this service occupies
+      const needed = slotsNeeded(booking.duration || 30);
+      const startIdx = ALL_SLOTS.indexOf(time);
+      for (let i = 1; i < needed; i++) {
+        const overflowSlot = ALL_SLOTS[startIdx + i];
+        if (!overflowSlot) break;
+        const overflowEl = [...document.querySelectorAll('.time-slot')].find(s => s.textContent.trim() === overflowSlot);
+        if (overflowEl) {
+          overflowEl.classList.add('blocked');
+          overflowEl.dataset.overflow = '1';
+        }
+      }
     }
 
     function updatePaymentUI() {
@@ -481,3 +595,7 @@
   </script>
 </body>
 </html>
+
+
+
+
