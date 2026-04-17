@@ -166,7 +166,7 @@ app.get('/api/available-slots', async (req, res) => {
   try {
     const { date } = req.query;
     const { rows } = await pool.query(
-      `SELECT time, COUNT(*) as cnt FROM bookings WHERE date=$1 AND status != 'cancelled' GROUP BY time HAVING COUNT(*) >= 3`,
+      `SELECT time FROM bookings WHERE date=$1 AND status NOT IN ('cancelled') GROUP BY time HAVING COUNT(*) >= 1`,
       [date]
     );
     res.json({ bookedTimes: rows.map(r => r.time) });
@@ -177,6 +177,14 @@ app.get('/api/available-slots', async (req, res) => {
 app.post('/api/bookings', async (req, res) => {
   try {
     const { type, service, barber, date, time, name, phone, address, notes, price, duration } = req.body;
+    // Slot conflict guard � one active booking blocks this slot
+    const conflict = await pool.query(
+      `SELECT id FROM bookings WHERE date=$1 AND time=$2 AND status NOT IN ('cancelled') LIMIT 1`,
+      [date, time]
+    );
+    if (conflict.rows.length > 0) {
+      return res.status(409).json({ error: 'This time slot has already been booked. Please choose a different slot.' });
+    }
     const id = genId();
     await pool.query(
       `INSERT INTO bookings (id, type, service, barber, date, time, name, phone, address, notes, price, duration)
@@ -201,6 +209,14 @@ app.post('/api/create-order', async (req, res) => {
     const orderId = 'UHP-' + genId();
     // Store pending booking
     const { type, service, barber, date, time, name, phone, address, notes, price, duration } = bookingDetails;
+    // Slot conflict guard (payment) � one active booking blocks this slot
+    const conflictPay = await pool.query(
+      `SELECT id FROM bookings WHERE date=$1 AND time=$2 AND status NOT IN ('cancelled') LIMIT 1`,
+      [date, time]
+    );
+    if (conflictPay.rows.length > 0) {
+      return res.status(409).json({ error: 'This time slot has already been booked. Please choose a different slot.' });
+    }
     const bookingId = genId();
     await pool.query(
       `INSERT INTO bookings (id, type, service, barber, date, time, name, phone, address, notes, price, duration, status)
