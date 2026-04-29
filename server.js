@@ -314,11 +314,49 @@ app.post('/api/enquiries', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/visualize
+// POST /api/visualize  (powered by Hugging Face FLUX.1-schnell)
 app.post('/api/visualize', async (req, res) => {
   try {
-    const { imageBase64, style } = req.body;
-    if (!process.env.OPENAI_API_KEY) return res.status(400).json({ error: 'OpenAI not configured' });
+    const { style } = req.body;
+    if (!style) return res.status(400).json({ error: 'No hairstyle selected' });
+    if (!process.env.HF_API_KEY) return res.status(400).json({ error: 'AI Visualizer not configured' });
+
+    const prompt = `Photorealistic professional barbershop studio portrait of a young Indian man with a perfect ${style} hairstyle, sharp clean cut, premium barbershop lighting, front-facing view, ultra-detailed hair, award-winning photography, dark elegant background`;
+
+    const hfRes = await axios.post(
+      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+      { inputs: prompt },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          'Content-Type': 'application/json',
+          Accept: 'image/png'
+        },
+        responseType: 'arraybuffer',
+        timeout: 90000
+      }
+    );
+
+    // Check if model is loading (HF returns JSON error in that case)
+    const contentType = hfRes.headers['content-type'] || '';
+    if (contentType.includes('application/json')) {
+      const jsonErr = JSON.parse(Buffer.from(hfRes.data).toString());
+      if (jsonErr.error && jsonErr.error.includes('loading')) {
+        return res.status(503).json({ error: 'AI model is warming up. Please wait 20 seconds and try again.' });
+      }
+      return res.status(500).json({ error: jsonErr.error || 'Generation failed' });
+    }
+
+    const base64 = Buffer.from(hfRes.data).toString('base64');
+    const imageUrl = `data:image/png;base64,${base64}`;
+    res.json({ imageUrl });
+  } catch (e) {
+    const errMsg = e.response
+      ? `HF API Error ${e.response.status}: ${e.response.statusText}`
+      : e.message;
+    res.status(500).json({ error: errMsg });
+  }
+});
     // Step 1: GPT-4o analyze face
     const visionRes = await axios.post(
       'https://api.openai.com/v1/chat/completions',
