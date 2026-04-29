@@ -357,37 +357,6 @@ app.post('/api/visualize', async (req, res) => {
     res.status(500).json({ error: errMsg });
   }
 });
-    // Step 1: GPT-4o analyze face
-    const visionRes = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4o',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: 'Analyze this person\'s face shape, skin tone, and facial features in 2-3 sentences max. Be objective and descriptive.' },
-            { type: 'image_url', image_url: { url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}` } }
-          ]
-        }],
-        max_tokens: 150
-      },
-      { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } }
-    );
-    const faceDescription = visionRes.data.choices[0].message.content;
-    // Step 2: DALL-E 3 generate
-    const dalleRes = await axios.post(
-      'https://api.openai.com/v1/images/generations',
-      {
-        model: 'dall-e-3',
-        prompt: `A photorealistic, high-end studio portrait photograph of a person with exactly these facial features: '${faceDescription}'. They are now sporting a brand new, highly detailed '${style}' hairstyle. The lighting is premium barbershop lighting, front-facing view, perfect realism.`,
-        n: 1,
-        size: '1024x1024'
-      },
-      { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } }
-    );
-    res.json({ imageUrl: dalleRes.data.data[0].url });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUTH ROUTES
